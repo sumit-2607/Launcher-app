@@ -1,30 +1,21 @@
-/*
- * Copyright 2022, Lawnchair
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package app.lawnchair
 
 import android.animation.AnimatorSet
 import android.app.ActivityOptions
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
 import android.graphics.Color
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.Icon
 import android.os.Bundle
+import android.util.Log
 import android.util.Pair
+import android.view.ContextThemeWrapper
 import android.view.Display
 import android.view.View
 import android.view.ViewTreeObserver
@@ -83,6 +74,7 @@ import com.android.launcher3.widget.LauncherWidgetHolder
 import com.android.launcher3.widget.RoundedCornerEnforcement
 import com.android.systemui.plugins.shared.LauncherOverlayManager
 import com.android.systemui.shared.system.QuickStepContract
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.kieronquinn.app.smartspacer.sdk.client.SmartspacerClient
 import com.patrykmichalik.opto.core.firstBlocking
 import com.patrykmichalik.opto.core.onEach
@@ -142,6 +134,7 @@ class LawnchairLauncher : QuickstepLauncher() {
     val gestureController by unsafeLazy { GestureController(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         if (!Utilities.ATLEAST_Q) {
             enableEdgeToEdge(
                 navigationBarStyle = SystemBarStyle.auto(
@@ -437,6 +430,10 @@ class LawnchairLauncher : QuickstepLauncher() {
         super.onResume()
         restartIfPending()
 
+        if (!isDefaultLauncher(this)) {
+            showSetDefaultLauncherDialog(this)
+        }
+
         dragLayer.viewTreeObserver.addOnDrawListener(
             object : ViewTreeObserver.OnDrawListener {
                 private var handled = false
@@ -508,4 +505,63 @@ val Context.launcherNullable: LawnchairLauncher? get() = try {
     launcher
 } catch (_: IllegalArgumentException) {
     null
+}
+
+private fun isDefaultLauncher(context: Context): Boolean {
+    val intent = Intent(Intent.ACTION_MAIN).apply {
+        addCategory(Intent.CATEGORY_HOME)
+    }
+    val resolveInfo = context.packageManager.resolveActivity(intent, 0)
+    return resolveInfo?.activityInfo?.packageName == context.packageName
+}
+private fun showSetDefaultLauncherDialog(ctx : Context) {
+    val context = ContextThemeWrapper(ctx, com.google.android.material.R.style.Theme_Material3_DayNight_Dialog_Alert)
+
+    MaterialAlertDialogBuilder(context)
+        .setTitle("Set Lawnchair as Default")
+        .setMessage("For the best experience, set Lawnchair as your default home app.")
+        .setPositiveButton("Set Default") { _, _ ->
+            promptSetDefaultLauncher(ctx)
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
+}
+
+
+private fun promptSetDefaultLauncher(context: Context) {
+    try {
+        val intent = Intent(android.provider.Settings.ACTION_HOME_SETTINGS)
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        // Fallback for some OEMs where ACTION_HOME_SETTINGS doesn't exist
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+        }
+        context.startActivity(intent)
+    }
+}
+
+fun Context.addGameShortcut() {
+    val shortcutManager = getSystemService(Context.SHORTCUT_SERVICE) as ShortcutManager
+
+    val shortcut = ShortcutInfo.Builder(this, "game_shortcut")
+        .setShortLabel("My Game")
+        .setLongLabel("Launch My Game")
+        .setIcon(Icon.createWithResource(this, R.drawable.ic_game))
+        .setIntent(
+            Intent(Intent.ACTION_MAIN).apply {
+                setClassName(this@addGameShortcut, "com.example.game.GameActivity")
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+        )
+        .build()
+
+    // Pin shortcut to launcher
+    if (shortcutManager.isRequestPinShortcutSupported) {
+        val pinIntent = shortcutManager.createShortcutResultIntent(shortcut)
+        val successCallback = PendingIntent.getBroadcast(
+            this, 0, pinIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+        shortcutManager.requestPinShortcut(shortcut, successCallback.intentSender)
+    }
 }
