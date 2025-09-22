@@ -1,18 +1,3 @@
-/*
- * Copyright 2021, Lawnchair
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package app.lawnchair
 
@@ -51,27 +36,75 @@ import com.android.launcher3.R
 import com.android.launcher3.Utilities
 import com.android.quickstep.RecentsActivity
 import com.android.systemui.shared.system.QuickStepContract
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.singular.sdk.Singular
+import com.singular.sdk.SingularConfig
 import java.io.File
 
 class LawnchairApp : Application() {
-    private val compatible = Build.VERSION.SDK_INT in BuildConfig.QUICKSTEP_MIN_SDK..BuildConfig.QUICKSTEP_MAX_SDK
+
+    private val compatible =
+        Build.VERSION.SDK_INT in BuildConfig.QUICKSTEP_MIN_SDK..BuildConfig.QUICKSTEP_MAX_SDK
     private val isRecentsComponent: Boolean by unsafeLazy { checkRecentsComponent() }
     private val recentsEnabled: Boolean get() = compatible && isRecentsComponent
     private val isAtleastT = Utilities.ATLEAST_T
+
     internal var accessibilityService: LawnchairAccessibilityService? = null
-    val isVibrateOnIconAnimation: Boolean by unsafeLazy { getSystemUiBoolean("config_vibrateOnIconAnimation", false) }
+    val isVibrateOnIconAnimation: Boolean by unsafeLazy {
+        getSystemUiBoolean("config_vibrateOnIconAnimation", false)
+    }
+
+    lateinit var firebaseAnalytics: FirebaseAnalytics
+        private set
 
     override fun onCreate() {
         super.onCreate()
         instance = this
         QuickStepContract.sRecentsDisabled = !recentsEnabled
         Flowerpot.Manager.getInstance(this)
+
+        // 🔹 Init Singular
+        try {
+            val config = SingularConfig("YOUR_SDK_KEY", "YOUR_SDK_SECRET")
+            Singular.start(config)
+            Log.d(TAG, "Singular initialized")
+        } catch (e: Exception) {
+            Log.e(TAG, "Singular init failed", e)
+        }
+
+        // 🔹 Init Firebase
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
+        Log.d(TAG, "Firebase Analytics initialized")
     }
+
+    // ---------------------------
+    // Event Logging Helpers
+    // ---------------------------
+
+    fun logOnboardingStart() {
+        firebaseAnalytics.logEvent("onboarding_start", null)
+        Singular.event("onboarding_start")
+    }
+
+    fun logOnboardingFinish() {
+        firebaseAnalytics.logEvent("onboarding_finish", null)
+        Singular.event("onboarding_finish")
+    }
+
+    fun logUserMovedToGame() {
+        firebaseAnalytics.logEvent("user_moved_to_game", null)
+        Singular.event("user_moved_to_game")
+    }
+
+    // ---------------------------
+    // Existing Lawnchair methods
+    // ---------------------------
 
     fun hideClockInStatusBar() {
         if (!isRecentsEnabled) return
         try {
-            val currentBlacklist = Settings.Secure.getString(contentResolver, "icon_blacklist") ?: ""
+            val currentBlacklist =
+                Settings.Secure.getString(contentResolver, "icon_blacklist") ?: ""
             val newBlacklist = if (currentBlacklist.contains("clock")) {
                 currentBlacklist
             } else {
@@ -86,8 +119,10 @@ class LawnchairApp : Application() {
     fun restoreClockInStatusBar() {
         if (!isRecentsEnabled) return
         try {
-            val currentBlacklist = Settings.Secure.getString(contentResolver, "icon_blacklist") ?: ""
-            val newBlacklist = currentBlacklist.split(",").filter { it != "clock" }.joinToString(",")
+            val currentBlacklist =
+                Settings.Secure.getString(contentResolver, "icon_blacklist") ?: ""
+            val newBlacklist =
+                currentBlacklist.split(",").filter { it != "clock" }.joinToString(",")
             Settings.Secure.putString(contentResolver, "icon_blacklist", newBlacklist)
         } catch (_: Exception) {
         }
@@ -141,7 +176,8 @@ class LawnchairApp : Application() {
         }
     }
 
-    private fun getJournalFile(file: File): File = File(file.parentFile, "${file.name}-journal")
+    private fun getJournalFile(file: File): File =
+        File(file.parentFile, "${file.name}-journal")
 
     private fun getSystemUiBoolean(resName: String, fallback: Boolean): Boolean {
         val systemUiPackage = "com.android.systemui"
@@ -187,22 +223,28 @@ class LawnchairApp : Application() {
 
     private fun checkRecentsComponent(): Boolean {
         @SuppressLint("DiscouragedApi")
-        val resId = resources.getIdentifier("config_recentsComponentName", "string", "android")
+        val resId =
+            resources.getIdentifier("config_recentsComponentName", "string", "android")
         if (resId == 0) {
             Log.d(TAG, "config_recentsComponentName not found, disabling recents")
             return false
         }
 
-        val recentsComponent = ComponentName.unflattenFromString(resources.getString(resId))
+        val recentsComponent =
+            ComponentName.unflattenFromString(resources.getString(resId))
         if (recentsComponent == null) {
             Log.d(TAG, "config_recentsComponentName is empty, disabling recents")
             return false
         }
 
-        val isRecentsComponent = recentsComponent.packageName == packageName &&
-            recentsComponent.className == RecentsActivity::class.java.name
+        val isRecentsComponent =
+            recentsComponent.packageName == packageName &&
+                recentsComponent.className == RecentsActivity::class.java.name
         if (!isRecentsComponent) {
-            Log.d(TAG, "config_recentsComponentName ($recentsComponent) is not Lawnchair, disabling recents")
+            Log.d(
+                TAG,
+                "config_recentsComponentName ($recentsComponent) is not Lawnchair, disabling recents"
+            )
             return false
         }
 
@@ -268,7 +310,11 @@ class LawnchairApp : Application() {
         }
 
         fun getUriForFile(context: Context, file: File): Uri {
-            return FileProvider.getUriForFile(context, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
+            return FileProvider.getUriForFile(
+                context,
+                "${BuildConfig.APPLICATION_ID}.fileprovider",
+                file
+            )
         }
     }
 }

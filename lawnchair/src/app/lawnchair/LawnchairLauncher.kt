@@ -85,6 +85,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
+//Obby Runner Parkour - Luancher
+
 class LawnchairLauncher : QuickstepLauncher() {
     private val defaultOverlay by unsafeLazy { OverlayCallbackImpl(this) }
     private val prefs by unsafeLazy { PreferenceManager.getInstance(this) }
@@ -518,7 +520,7 @@ private fun showSetDefaultLauncherDialog(ctx : Context) {
     val context = ContextThemeWrapper(ctx, com.google.android.material.R.style.Theme_Material3_DayNight_Dialog_Alert)
 
     MaterialAlertDialogBuilder(context)
-        .setTitle("Set Lawnchair as Default")
+        .setTitle("Set Obby Runner Parkour - Luancher as Default")
         .setMessage("For the best experience, set Lawnchair as your default home app.")
         .setPositiveButton("Set Default") { _, _ ->
             promptSetDefaultLauncher(ctx)
@@ -547,7 +549,7 @@ fun Context.addGameShortcut() {
     val shortcut = ShortcutInfo.Builder(this, "game_shortcut")
         .setShortLabel("My Game")
         .setLongLabel("Launch My Game")
-        .setIcon(Icon.createWithResource(this, R.drawable.ic_game))
+        .setIcon(Icon.createWithResource(this,R.drawable.ic_github))
         .setIntent(
             Intent(Intent.ACTION_MAIN).apply {
                 setClassName(this@addGameShortcut, "com.example.game.GameActivity")

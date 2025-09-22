@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    id 'com.google.gms.google-services' version '4.4.3' apply false
     id 'com.android.application' version "8.10.0"
     id 'com.android.library' version "8.10.0" apply false
     id 'com.android.test' version '8.10.0' apply false
@@ -352,6 +353,8 @@ dependencies {
     implementation projects.iconloaderlib
     implementation projects.searchuilib
     implementation projects.animationlib
+    implementation 'com.google.firebase:firebase-analytics:23.0.0'
+    implementation 'com.singular.sdk:singular_sdk:12.10.0'
 
     // Recents lib dependency
     withQuickstepCompileOnly projects.hiddenApi
