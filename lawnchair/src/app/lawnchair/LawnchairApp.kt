@@ -65,8 +65,9 @@ class LawnchairApp : Application() {
 
         // 🔹 Init Singular
         try {
-            val config = SingularConfig("YOUR_SDK_KEY", "YOUR_SDK_SECRET")
-            Singular.start(config)
+            val config = SingularConfig("liolan_com_0e64d4f8", "de8016ca32c265e184ab14028b03f5c1")
+            // ✅ Correct method
+            Singular.init(this, config)
             Log.d(TAG, "Singular initialized")
         } catch (e: Exception) {
             Log.e(TAG, "Singular init failed", e)
