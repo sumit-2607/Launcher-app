@@ -267,17 +267,17 @@ android {
         }
 
         github {
-            applicationId 'app.lawnchair'
+            applicationId 'app.lion'
             dimension "channel"
         }
 
         nightly {
-            applicationId 'app.lawnchair.nightly'
+            applicationId 'app.lion.nightly'
             dimension "channel"
         }
 
         play {
-            applicationId "app.lawnchair.play"
+            applicationId "app.lion.play"
             dimension "channel"
             isDefault true
         }
