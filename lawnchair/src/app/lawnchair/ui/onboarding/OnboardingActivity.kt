@@ -29,8 +29,6 @@ class OnboardingActivity : ComponentActivity() {
                     },
                 )
 
-
-
                 if (showDialog) {
                     DefaultHomeAppDialog(
                         selectedLauncher = "New Launcher Plus",
