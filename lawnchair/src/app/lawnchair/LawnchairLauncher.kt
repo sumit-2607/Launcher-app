@@ -39,6 +39,8 @@ import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.root.RootHelperManager
 import app.lawnchair.root.RootNotAvailableException
 import app.lawnchair.theme.ThemeProvider
+import app.lawnchair.ui.onboarding.OnboardingActivity
+import app.lawnchair.ui.onboarding.OnboardingScreen
 import app.lawnchair.ui.popup.LauncherOptionsPopup
 import app.lawnchair.ui.popup.LawnchairShortcut
 import app.lawnchair.util.getThemedIconPacksInstalled
@@ -433,7 +435,8 @@ class LawnchairLauncher : QuickstepLauncher() {
         restartIfPending()
 
         if (!isDefaultLauncher(this)) {
-            showSetDefaultLauncherDialog(this)
+//            showSetDefaultLauncherDialog(this)
+            startActivity(Intent(this, OnboardingActivity::class.java))
         }
 
         dragLayer.viewTreeObserver.addOnDrawListener(
